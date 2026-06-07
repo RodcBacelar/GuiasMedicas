@@ -5,8 +5,10 @@ require('./database');
 dotenv.config();
 
 const app = express();
+const usuariosRoutes = require('./routes/usuarios');
 
 app.use(express.json());
+app.use('/usuarios', usuariosRoutes);
 
 app.get('/', (req, res) => {
   res.json({ mensagem: 'API funcionando!' });
