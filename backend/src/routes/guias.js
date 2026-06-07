@@ -4,6 +4,8 @@ const router = express.Router();
 const pool = require('../database');
 
 const { autenticar, autorizar } = require('../middleware/autenticacao');
+const validar = require('../middleware/validacao');
+const { criarGuiaSchema, atualizarGuiaSchema, statusGuiaSchema } = require('../schemas/guiaSchema');
 
 // Buscar Guias
 router.get('/', autenticar, async (req, res) => {
@@ -50,7 +52,7 @@ router.get('/paciente/:id', autenticar, autorizar('paciente', 'medico'), async (
 });
 
 // Criar Guia
-router.post('/', autenticar, autorizar('medico'), async (req, res) => {
+router.post('/', autenticar, autorizar('medico'), validar(criarGuiaSchema), async (req, res) => {
   try {
     const { id_medico, id_paciente, id_unidade, prioridade, exames, numero_consultas, tempo_doenca, quadro_clinico, hipotese_diagnostico, cid_10, medicacao, tratamento_evolucao, motivo_encaminhamento } = req.body;
 
@@ -73,7 +75,7 @@ router.post('/', autenticar, autorizar('medico'), async (req, res) => {
 });
 
 // Status Guia
-router.put('/:id/status', autenticar, autorizar('unidade'), async (req, res) => {
+router.put('/:id/status', autenticar, autorizar('unidade'), validar(atualizarGuiaSchema), async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
@@ -88,7 +90,7 @@ router.put('/:id/status', autenticar, autorizar('unidade'), async (req, res) => 
 });
 
 // Atualizar Guia
-router.put('/:id', autenticar, autorizar('medico'), async (req, res) => {
+router.put('/:id', autenticar, autorizar('medico'), validar(statusGuiaSchema), async (req, res) => {
   try {
     const { id } = req.params;
     const { prioridade, exames, numero_consultas, tempo_doenca, quadro_clinico, hipotese_diagnostico, cid_10, medicacao, tratamento_evolucao, motivo_encaminhamento } = req.body;

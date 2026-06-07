@@ -3,6 +3,8 @@ const bcrypt = require('bcrypt');
 const router = express.Router();
 const pool = require('../database');
 const { autenticar, autorizar } = require('../middleware/autenticacao');
+const validar = require('../middleware/validacao');
+const { criarMedicoSchema, atualizarMedicoSchema } = require('../schemas/medicoSchema');
 
 // Buscar Médicos
 router.get('/', autenticar, async (req, res) => {
@@ -26,7 +28,7 @@ router.get('/:id', autenticar, async (req, res) => {
 });
 
 // Criar Médicos
-router.post('/', async (req, res) => {
+router.post('/', validar(criarMedicoSchema), async (req, res) => {
   try {
     const { nome, telefone, email, senha, tipo, nascimento, sexo, residencia, especialidade, cargo} = req.body;
     const senhaHash = await bcrypt.hash(senha, 10);
@@ -45,7 +47,7 @@ router.post('/', async (req, res) => {
 });
 
 // Atualizar Médicos
-router.put('/:id', autenticar, async (req, res) => {
+router.put('/:id', autenticar, validar(atualizarMedicoSchema), async (req, res) => {
   try {
     const { nome, telefone, email, senha, tipo, nascimento, sexo, residencia, especialidade, cargo} = req.body;
     const { id } = req.params;

@@ -3,6 +3,8 @@ const bcrypt = require('bcrypt');
 const router = express.Router();
 const pool = require('../database');
 const { autenticar, autorizar } = require('../middleware/autenticacao');
+const validar = require('../middleware/validacao');
+const { criarUnidadeSchema, atualizarUnidadeSchema } = require('../schemas/unidadeSchema');
 
 // Buscar Unidades
 router.get('/', autenticar, async (req, res) => {
@@ -26,7 +28,7 @@ router.get('/:id', autenticar, async (req, res) => {
 });
 
 // Criar Unidades
-router.post('/', async (req, res) => {
+router.post('/', validar(criarUnidadeSchema), async (req, res) => {
   try {
     const { nome, telefone, email, senha, tipo, rua, numero, bairro, cidade, estado, cep } = req.body;
     const senhaHash = await bcrypt.hash(senha, 10);
@@ -45,7 +47,7 @@ router.post('/', async (req, res) => {
 });
 
 // Atualizar Unidades
-router.put('/:id', autenticar, async (req, res) => {
+router.put('/:id', autenticar, validar(atualizarUnidadeSchema) , async (req, res) => {
   try {
     const { nome, telefone, email, senha, tipo, rua, numero, bairro, cidade, estado, cep} = req.body;
     const { id } = req.params;
