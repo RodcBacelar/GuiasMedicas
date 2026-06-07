@@ -1,10 +1,14 @@
 const express = require('express');
 const dotenv = require('dotenv');
+const cors = require('cors');
 require('./database');
 
 dotenv.config();
-
 const app = express();
+
+app.use(cors({origin: ['http://localhost:5173']}));
+app.use(express.json());
+
 const usuariosRoutes = require('./routes/usuarios');
 const medicosRoutes = require('./routes/medicos');
 const pacientesRoutes = require('./routes/pacientes');
@@ -13,7 +17,6 @@ const examesRoutes = require('./routes/exames');
 const guiasRoutes = require('./routes/guias');
 const autenticacaoRoutes = require('./routes/autenticacao');
 
-app.use(express.json());
 app.use('/usuarios', usuariosRoutes);
 app.use('/medicos', medicosRoutes);
 app.use('/pacientes', pacientesRoutes);
