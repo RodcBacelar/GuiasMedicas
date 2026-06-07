@@ -2,9 +2,10 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const router = express.Router();
 const pool = require('../database');
+const { autenticar, autorizar } = require('../middleware/autenticacao');
 
 // Buscar Pacientes
-router.get('/', async (req, res) => {
+router.get('/', autenticar, async (req, res) => {
   try {
     const resultado = await pool.query('SELECT * FROM usuario JOIN paciente ON usuario.id = paciente.id_usuario WHERE usuario.ativo = true');
     res.json(resultado.rows);
@@ -14,7 +15,7 @@ router.get('/', async (req, res) => {
 });
 
 // Buscar Pacientes por ID
-router.get('/:id', async (req, res) => {
+router.get('/:id', autenticar, async (req, res) => {
   try {
     const { id } = req.params;
     const resultado = await pool.query('SELECT * FROM usuario JOIN paciente ON usuario.id = paciente.id_usuario WHERE usuario.id = $1', [id]);
@@ -44,7 +45,7 @@ router.post('/', async (req, res) => {
 });
 
 // Atualizar Pacientes
-router.put('/:id', async (req, res) => {
+router.put('/:id', autenticar, async (req, res) => {
   try {
     const { nome, telefone, email, senha, tipo, nascimento, sexo} = req.body;
     const { id } = req.params;

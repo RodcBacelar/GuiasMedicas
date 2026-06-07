@@ -3,8 +3,10 @@ const bcrypt = require('bcrypt');
 const router = express.Router();
 const pool = require('../database');
 
+const { autenticar, autorizar } = require('../middleware/autenticacao');
+
 // Buscar Guias
-router.get('/', async (req, res) => {
+router.get('/', autenticar, async (req, res) => {
   try {
     const resultado = await pool.query(`
       SELECT guia.*, 
@@ -25,7 +27,7 @@ router.get('/', async (req, res) => {
 });
 
 // Buscar Guias por id do paciente
-router.get('/paciente/:id', async (req, res) => {
+router.get('/paciente/:id', autenticar, autorizar('paciente', 'medico'), async (req, res) => {
   try {
     const { id } = req.params;
     const resultado = await pool.query(`
@@ -48,7 +50,7 @@ router.get('/paciente/:id', async (req, res) => {
 });
 
 // Criar Guia
-router.post('/', async (req, res) => {
+router.post('/', autenticar, autorizar('medico'), async (req, res) => {
   try {
     const { id_medico, id_paciente, id_unidade, prioridade, exames, numero_consultas, tempo_doenca, quadro_clinico, hipotese_diagnostico, cid_10, medicacao, tratamento_evolucao, motivo_encaminhamento } = req.body;
 
@@ -71,7 +73,7 @@ router.post('/', async (req, res) => {
 });
 
 // Status Guia
-router.put('/:id/status', async (req, res) => {
+router.put('/:id/status', autenticar, autorizar('unidade'), async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
@@ -86,7 +88,7 @@ router.put('/:id/status', async (req, res) => {
 });
 
 // Atualizar Guia
-router.put('/:id', async (req, res) => {
+router.put('/:id', autenticar, autorizar('medico'), async (req, res) => {
   try {
     const { id } = req.params;
     const { prioridade, exames, numero_consultas, tempo_doenca, quadro_clinico, hipotese_diagnostico, cid_10, medicacao, tratamento_evolucao, motivo_encaminhamento } = req.body;

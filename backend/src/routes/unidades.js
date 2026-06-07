@@ -2,9 +2,10 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const router = express.Router();
 const pool = require('../database');
+const { autenticar, autorizar } = require('../middleware/autenticacao');
 
 // Buscar Unidades
-router.get('/', async (req, res) => {
+router.get('/', autenticar, async (req, res) => {
   try {
     const resultado = await pool.query('SELECT * FROM usuario JOIN unidade ON usuario.id = unidade.id_usuario WHERE usuario.ativo = true');
     res.json(resultado.rows);
@@ -14,7 +15,7 @@ router.get('/', async (req, res) => {
 });
 
 // Buscar Unidades por ID
-router.get('/:id', async (req, res) => {
+router.get('/:id', autenticar, async (req, res) => {
   try {
     const { id } = req.params;
     const resultado = await pool.query('SELECT * FROM usuario JOIN unidade ON usuario.id = unidade.id_usuario WHERE usuario.id = $1', [id]);
@@ -44,7 +45,7 @@ router.post('/', async (req, res) => {
 });
 
 // Atualizar Unidades
-router.put('/:id', async (req, res) => {
+router.put('/:id', autenticar, async (req, res) => {
   try {
     const { nome, telefone, email, senha, tipo, rua, numero, bairro, cidade, estado, cep} = req.body;
     const { id } = req.params;

@@ -2,9 +2,10 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const router = express.Router();
 const pool = require('../database');
+const { autenticar, autorizar } = require('../middleware/autenticacao');
 
 // Buscar exames
-router.get('/', async (req, res) => {
+router.get('/', autenticar, async (req, res) => {
   try {
     const resultado = await pool.query('SELECT * FROM exame');
     res.json(resultado.rows);
@@ -14,7 +15,7 @@ router.get('/', async (req, res) => {
 });
 
 // Buscar exames por ID
-router.get('/:id', async (req, res) => {
+router.get('/:id', autenticar, async (req, res) => {
   try {
     const { id } = req.params;
     const resultado = await pool.query('SELECT * FROM exame WHERE id = $1', [id]);
@@ -25,7 +26,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Criar exames
-router.post('/', async (req, res) => {
+router.post('/', autenticar, autorizar('unidade'), async (req, res) => {
   try {
     const { nome, descricao } = req.body;
     const resultado = await pool.query('INSERT INTO exame (nome, descricao) VALUES ($1, $2)', [nome, descricao]);
@@ -36,7 +37,7 @@ router.post('/', async (req, res) => {
 });
 
 // Atualizar exames
-router.put('/:id', async (req, res) => {
+router.put('/:id', autenticar, autorizar('unidade'), async (req, res) => {
   try {
     const { nome, descricao } = req.body;
     const { id } = req.params;
@@ -50,7 +51,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // Remover exames
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', autenticar, autorizar('unidade'), async (req, res) => {
   try {
     const { id } = req.params;
 

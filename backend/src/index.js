@@ -11,6 +11,7 @@ const pacientesRoutes = require('./routes/pacientes');
 const unidadesRoutes = require('./routes/unidades');
 const examesRoutes = require('./routes/exames');
 const guiasRoutes = require('./routes/guias');
+const autenticacaoRoutes = require('./routes/autenticacao');
 
 app.use(express.json());
 app.use('/usuarios', usuariosRoutes);
@@ -19,6 +20,7 @@ app.use('/pacientes', pacientesRoutes);
 app.use('/unidades', unidadesRoutes);
 app.use('/exames', examesRoutes);
 app.use('/guias', guiasRoutes);
+app.use('/autenticacao', autenticacaoRoutes);
 
 app.get('/', (req, res) => {
   res.json({ mensagem: 'API funcionando!' });
