@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cadastro de Unidade – Guias Médicas</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="auth-wrapper" style="align-items:flex-start; padding:40px 16px;">
+    <div class="auth-box" style="max-width:560px;">
+      <div class="auth-logo">
+        <h1>🏥 Guias Médicas</h1>
+        <p>Cadastro de Unidade / Operadora</p>
+      </div>
+
+      <div id="erro"    class="alert alert-error"></div>
+      <div id="sucesso" class="alert alert-success"></div>
+
+      <form id="form-cadastro">
+        <p class="text-muted mb-4">Dados de acesso</p>
+        <div class="form-group">
+          <label>Nome da unidade *</label>
+          <input type="text" id="nome" placeholder="Ex: Hospital São Lucas" required>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>E-mail *</label>
+            <input type="email" id="email" required>
+          </div>
+          <div class="form-group">
+            <label>Telefone</label>
+            <input type="tel" id="telefone" placeholder="(11) 3333-3333">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Senha *</label>
+          <input type="password" id="senha" required minlength="6">
+        </div>
+
+        <hr>
+        <p class="text-muted mb-4">Endereço</p>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Rua *</label>
+            <input type="text" id="rua" required>
+          </div>
+          <div class="form-group">
+            <label>Número *</label>
+            <input type="text" id="numero" required>
+          </div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Bairro *</label>
+            <input type="text" id="bairro" required>
+          </div>
+          <div class="form-group">
+            <label>Cidade *</label>
+            <input type="text" id="cidade" required>
+          </div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Estado (UF) *</label>
+            <input type="text" id="estado" maxlength="2" placeholder="MG" required>
+          </div>
+          <div class="form-group">
+            <label>CEP *</label>
+            <input type="text" id="cep" maxlength="8" placeholder="37500000" required>
+          </div>
+        </div>
+
+        <div class="form-group mt-4">
+          <button type="submit" class="btn btn-primary" id="btn">Cadastrar</button>
+        </div>
+        <p class="text-center text-muted mt-2">
+          Já tem conta? <a href="index.html">Fazer login</a>
+        </p>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script>
+    document.getElementById('form-cadastro').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('btn');
+      btn.disabled = true;
+      btn.textContent = 'Cadastrando...';
+
+      try {
+        await apiFetch('/unidades', {
+          method: 'POST',
+          body: JSON.stringify({
+            nome:     document.getElementById('nome').value,
+            telefone: document.getElementById('telefone').value || null,
+            email:    document.getElementById('email').value,
+            senha:    document.getElementById('senha').value,
+            tipo:     'unidade',
+            rua:      document.getElementById('rua').value,
+            numero:   document.getElementById('numero').value,
+            bairro:   document.getElementById('bairro').value,
+            cidade:   document.getElementById('cidade').value,
+            estado:   document.getElementById('estado').value.toUpperCase(),
+            cep:      document.getElementById('cep').value,
+          }),
+        });
+        mostrarSucesso('sucesso', 'Unidade cadastrada com sucesso! Redirecionando...');
+        setTimeout(() => window.location.href = 'index.html', 2000);
+      } catch (err) {
+        mostrarErro('erro', err.message);
+        btn.disabled = false;
+        btn.textContent = 'Cadastrar';
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login – Guias Médicas</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="auth-wrapper">
+    <div class="auth-box">
+      <div class="auth-logo">
+        <h1>🏥 Guias Médicas</h1>
+        <p>Sistema de Solicitação e Autorização</p>
+      </div>
+
+      <div id="erro" class="alert alert-error"></div>
+
+      <form id="form-login">
+        <div class="form-group">
+          <label for="email">E-mail</label>
+          <input type="email" id="email" placeholder="seu@email.com" required autofocus>
+        </div>
+        <div class="form-group">
+          <label for="senha">Senha</label>
+          <input type="password" id="senha" placeholder="••••••••" required>
+        </div>
+        <div class="form-group mt-4">
+          <button type="submit" class="btn btn-primary" id="btn-login">Entrar</button>
+        </div>
+      </form>
+
+      <hr>
+      <p class="text-center text-muted">Ainda não tem conta?</p>
+      <div class="flex mt-2 gap-2" style="flex-wrap:wrap; justify-content:center;">
+        <a href="cadastro-medico.html" class="btn btn-secondary btn-sm">Cadastrar como Médico</a>
+        <a href="cadastro-paciente.html" class="btn btn-secondary btn-sm">Cadastrar como Paciente</a>
+        <a href="cadastro-unidade.html" class="btn btn-secondary btn-sm">Cadastrar Unidade</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script>
+    // Se já estiver logado, redireciona direto
+    const usuarioLogado = getUsuario();
+    if (usuarioLogado) redirecionarPorTipo(usuarioLogado.tipo);
+
+    document.getElementById('form-login').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('btn-login');
+      btn.disabled = true;
+      btn.textContent = 'Entrando...';
+
+      try {
+        const data = await apiFetch('/autenticacao', {
+          method: 'POST',
+          body: JSON.stringify({
+            email: document.getElementById('email').value,
+            senha: document.getElementById('senha').value,
+          }),
+        });
+        salvarToken(data.token);
+        const usuario = decodeJWT(data.token);
+        redirecionarPorTipo(usuario.tipo);
+      } catch (err) {
+        mostrarErro('erro', err.message || 'E-mail ou senha inválidos.');
+        btn.disabled = false;
+        btn.textContent = 'Entrar';
+      }
+    });
+  </script>
+</body>
+</html>

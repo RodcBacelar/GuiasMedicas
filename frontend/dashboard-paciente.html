@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard – Paciente</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <span class="navbar-brand">🏥 Guias Médicas</span>
+    <span>
+      <span class="navbar-user" id="nome-usuario"></span>
+      <span id="indicador-polling" class="text-muted" style="font-size:.78rem; margin-right:8px; opacity:.7;">
+        🟢 Atualizando automaticamente
+      </span>
+      <button class="btn-logout" onclick="logout()">Sair</button>
+    </span>
+  </nav>
+
+  <div class="container">
+    <div class="page-header">
+      <h2>Minhas Guias</h2>
+    </div>
+
+    <div id="erro" class="alert alert-error"></div>
+
+    <!-- Legenda de status -->
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;">
+      <span class="badge badge-pendente">Pendente</span>
+      <span class="badge badge-analise">Em Análise</span>
+      <span class="badge badge-aprovado">Aprovado</span>
+      <span class="badge badge-negado">Negado</span>
+    </div>
+
+    <div class="card">
+      <div id="loading" class="loading">Carregando suas guias...</div>
+      <div class="table-wrapper" id="tabela-wrapper" style="display:none;">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Médico</th>
+              <th>Unidade</th>
+              <th>CID-10</th>
+              <th>Exames</th>
+              <th>Status</th>
+              <th>Data</th>
+              <th>Detalhes</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+        <p id="sem-guias" class="text-center text-muted mt-4" style="display:none;">
+          Você ainda não possui guias solicitadas.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de detalhes -->
+  <div class="modal-overlay" id="modal-detalhes">
+    <div class="modal" style="max-width:560px;">
+      <div class="modal-title" id="modal-titulo">Detalhes da Guia</div>
+      <div id="detalhes-conteudo"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="fecharModal()">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast de notificação -->
+  <div id="toast" class="toast" style="display:none;"></div>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script>
+    const usuario = exigirAuth('paciente');
+    let guiasAnteriores = {}; // id -> status (para detectar mudanças)
+    let primeiraVez = true;
+
+    async function carregarGuias(silencioso = false) {
+      if (!silencioso) {
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('tabela-wrapper').style.display = 'none';
+      }
+
+      try {
+        const guias = await apiFetch(`/guias/paciente/${usuario.id}`);
+
+        // Detecta mudanças de status para notificar (SLA: ≤ 1 min com polling de 30s)
+        if (!primeiraVez) {
+          guias.forEach(g => {
+            if (guiasAnteriores[g.id] && guiasAnteriores[g.id] !== g.status) {
+              const { text } = statusLabel(g.status);
+              mostrarToast(`Guia #${g.id} (${g.nome_medico ? 'Dr. ' + g.nome_medico : ''}): status atualizado para ${text}`);
+            }
+          });
+        }
+
+        // Atualiza mapa de status anteriores
+        guias.forEach(g => { guiasAnteriores[g.id] = g.status; });
+        primeiraVez = false;
+
+        renderTabela(guias);
+      } catch (err) {
+        if (!silencioso) mostrarErro('erro', 'Erro ao carregar guias: ' + err.message);
+      } finally {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('tabela-wrapper').style.display = 'block';
+      }
+    }
+
+    function renderTabela(guias) {
+      const tbody = document.getElementById('tbody');
+      tbody.innerHTML = '';
+
+      if (guias.length === 0) {
+        document.getElementById('sem-guias').style.display = 'block';
+        return;
+      }
+      document.getElementById('sem-guias').style.display = 'none';
+
+      guias.forEach(g => {
+        const { text, cls } = statusLabel(g.status);
+        const data   = new Date(g.criado_em).toLocaleDateString('pt-BR');
+        const exames = g.exames?.map(e => e.nome).join(', ') || '—';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${g.id}</td>
+          <td>${g.nome_medico ? 'Dr(a). ' + g.nome_medico : '—'}</td>
+          <td>${g.nome_unidade || '—'}</td>
+          <td><code>${g.cid_10}</code></td>
+          <td style="max-width:160px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${exames}">${exames}</td>
+          <td><span class="badge ${cls}">${text}</span></td>
+          <td>${data}</td>
+          <td><button class="btn btn-secondary btn-sm" onclick="abrirDetalhes(${g.id})">Ver</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // Armazena guias para o modal
+      window._guiasCache = guias;
+    }
+
+    function abrirDetalhes(id) {
+      const g = (window._guiasCache || []).find(x => x.id === id);
+      if (!g) return;
+      const { text, cls } = statusLabel(g.status);
+      const exames = g.exames?.map(e => e.nome).join(', ') || '—';
+      document.getElementById('modal-titulo').textContent = `Guia #${g.id}`;
+      document.getElementById('detalhes-conteudo').innerHTML = `
+        <table style="width:100%; font-size:.9rem;">
+          <tr><td style="padding:6px; color:var(--cinza); width:45%;"><b>Médico</b></td><td>${g.nome_medico ? 'Dr(a). ' + g.nome_medico : '—'}</td></tr>
+          <tr><td style="padding:6px; color:var(--cinza);"><b>Unidade</b></td><td>${g.nome_unidade || '—'}</td></tr>
+          <tr><td style="padding:6px; color:var(--cinza);"><b>Status</b></td><td><span class="badge ${cls}">${text}</span></td></tr>
+          <tr><td style="padding:6px; color:var(--cinza);"><b>CID-10</b></td><td>${g.cid_10}</td></tr>
+          <tr><td style="padding:6px; color:var(--cinza);"><b>Prioridade</b></td><td>${g.prioridade}</td></tr>
+          <tr><td style="padding:6px; color:var(--cinza);"><b>Motivo</b></td><td>${g.motivo_encaminhamento}</td></tr>
+          <tr><td style="padding:6px; color:var(--cinza);"><b>Exames solicitados</b></td><td>${exames}</td></tr>
+          <tr><td style="padding:6px; color:var(--cinza);"><b>Data</b></td><td>${new Date(g.criado_em).toLocaleString('pt-BR')}</td></tr>
+        </table>
+      `;
+      document.getElementById('modal-detalhes').classList.add('open');
+    }
+
+    function fecharModal() {
+      document.getElementById('modal-detalhes').classList.remove('open');
+    }
+
+    function mostrarToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = '🔔 ' + msg;
+      toast.style.display = 'block';
+      setTimeout(() => { toast.style.display = 'none'; }, 6000);
+    }
+
+    document.getElementById('modal-detalhes').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) fecharModal();
+    });
+
+    // Exibe nome do paciente
+    apiFetch(`/pacientes/${usuario.id}`).then(data => {
+      if (data?.[0]) document.getElementById('nome-usuario').textContent = data[0].nome;
+    }).catch(() => {});
+
+    // Carga inicial
+    carregarGuias(false);
+
+    // Polling a cada 30 segundos (SLA: notificação em até 1 minuto)
+    setInterval(() => carregarGuias(true), 30000);
+  </script>
+</body>
+</html>

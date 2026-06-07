@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard – Unidade</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <span class="navbar-brand">🏥 Guias Médicas</span>
+    <span>
+      <span class="navbar-user" id="nome-usuario"></span>
+      <button class="btn-logout" onclick="logout()">Sair</button>
+    </span>
+  </nav>
+
+  <div class="container-lg">
+    <div class="page-header">
+      <h2>Painel de Análise de Guias</h2>
+      <button class="btn btn-secondary btn-sm" onclick="carregarGuias()">↻ Atualizar</button>
+    </div>
+
+    <!-- Resumo por status -->
+    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px;" id="cards-resumo">
+      <div class="card" style="padding:16px; text-align:center; margin-bottom:0;">
+        <div style="font-size:1.6rem; font-weight:800; color:var(--amarelo);" id="cnt-pendente">—</div>
+        <div class="text-muted">Pendentes</div>
+      </div>
+      <div class="card" style="padding:16px; text-align:center; margin-bottom:0;">
+        <div style="font-size:1.6rem; font-weight:800; color:#1e40af;" id="cnt-analise">—</div>
+        <div class="text-muted">Em Análise</div>
+      </div>
+      <div class="card" style="padding:16px; text-align:center; margin-bottom:0;">
+        <div style="font-size:1.6rem; font-weight:800; color:var(--verde);" id="cnt-aprovado">—</div>
+        <div class="text-muted">Aprovadas</div>
+      </div>
+      <div class="card" style="padding:16px; text-align:center; margin-bottom:0;">
+        <div style="font-size:1.6rem; font-weight:800; color:var(--vermelho);" id="cnt-negado">—</div>
+        <div class="text-muted">Negadas</div>
+      </div>
+    </div>
+
+    <div id="erro" class="alert alert-error"></div>
+    <div id="sucesso" class="alert alert-success"></div>
+
+    <!-- Filtro -->
+    <div class="card" style="padding:14px 20px; margin-bottom:16px;">
+      <label style="margin-bottom:0; display:flex; align-items:center; gap:12px;">
+        Filtrar por status:
+        <select id="filtro-status" style="width:auto;">
+          <option value="">Todos</option>
+          <option value="pendente">Pendente</option>
+          <option value="em_analise">Em Análise</option>
+          <option value="aprovado">Aprovado</option>
+          <option value="negado">Negado</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="card">
+      <div id="loading" class="loading">Carregando guias...</div>
+      <div class="table-wrapper" id="tabela-wrapper" style="display:none;">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Médico</th>
+              <th>Paciente</th>
+              <th>CID-10</th>
+              <th>Prioridade</th>
+              <th>Status</th>
+              <th>Data</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+        <p id="sem-guias" class="text-center text-muted mt-4" style="display:none;">Nenhuma guia encontrada.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de análise -->
+  <div class="modal-overlay" id="modal-analise">
+    <div class="modal" style="max-width:620px;">
+      <div class="modal-title" id="modal-titulo">Analisar Guia</div>
+      <div id="modal-info" style="margin-bottom:18px; font-size:.9rem; line-height:1.7;"></div>
+      <hr>
+      <div class="form-group">
+        <label>Alterar status para:</label>
+        <select id="novo-status">
+          <option value="pendente">Pendente</option>
+          <option value="em_analise">Em Análise</option>
+          <option value="aprovado">Aprovado</option>
+          <option value="negado">Negado</option>
+        </select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="fecharModal()">Cancelar</button>
+        <button class="btn btn-primary" style="width:auto;" onclick="salvarStatus()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script>
+    const usuario = exigirAuth('unidade');
+    let todasGuias = [];
+    let guiaSelecionadaId = null;
+
+    async function carregarGuias() {
+      document.getElementById('loading').style.display = 'block';
+      document.getElementById('tabela-wrapper').style.display = 'none';
+      try {
+        // Filtra só as guias desta unidade
+        const todas = await apiFetch('/guias');
+        todasGuias = todas.filter(g => g.id_unidade === usuario.id);
+        atualizarResumo();
+        renderTabela();
+      } catch (err) {
+        mostrarErro('erro', 'Erro ao carregar guias: ' + err.message);
+      } finally {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('tabela-wrapper').style.display = 'block';
+      }
+    }
+
+    function atualizarResumo() {
+      const contagem = { pendente: 0, em_analise: 0, aprovado: 0, negado: 0 };
+      todasGuias.forEach(g => { if (contagem[g.status] !== undefined) contagem[g.status]++; });
+      document.getElementById('cnt-pendente').textContent = contagem.pendente;
+      document.getElementById('cnt-analise').textContent  = contagem.em_analise;
+      document.getElementById('cnt-aprovado').textContent = contagem.aprovado;
+      document.getElementById('cnt-negado').textContent   = contagem.negado;
+    }
+
+    function renderTabela() {
+      const filtro = document.getElementById('filtro-status').value;
+      const guias  = filtro ? todasGuias.filter(g => g.status === filtro) : todasGuias;
+      const tbody  = document.getElementById('tbody');
+      tbody.innerHTML = '';
+
+      if (guias.length === 0) {
+        document.getElementById('sem-guias').style.display = 'block';
+        return;
+      }
+      document.getElementById('sem-guias').style.display = 'none';
+
+      guias.forEach(g => {
+        const { text, cls } = statusLabel(g.status);
+        const data = new Date(g.criado_em).toLocaleDateString('pt-BR');
+        const podeAtualizar = g.status !== 'aprovado' && g.status !== 'negado';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${g.id}</td>
+          <td>${g.nome_medico || '—'}</td>
+          <td>${g.nome_paciente || '—'}</td>
+          <td><code>${g.cid_10}</code></td>
+          <td>${g.prioridade}</td>
+          <td><span class="badge ${cls}">${text}</span></td>
+          <td>${data}</td>
+          <td style="display:flex; gap:6px;">
+            <button class="btn btn-secondary btn-sm" onclick="abrirAnalise(${g.id})">Analisar</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function abrirAnalise(id) {
+      const g = todasGuias.find(x => x.id === id);
+      if (!g) return;
+      guiaSelecionadaId = id;
+      const exames = g.exames?.map(e => e.nome).join(', ') || '—';
+      document.getElementById('modal-titulo').textContent = `Guia #${g.id} – ${g.nome_paciente}`;
+      document.getElementById('modal-info').innerHTML = `
+        <b>Médico:</b> ${g.nome_medico}<br>
+        <b>CID-10:</b> ${g.cid_10}<br>
+        <b>Prioridade:</b> ${g.prioridade}<br>
+        <b>Quadro clínico:</b> ${g.quadro_clinico}<br>
+        <b>Hipótese diagnóstica:</b> ${g.hipotese_diagnostico}<br>
+        <b>Medicação:</b> ${g.medicacao}<br>
+        <b>Motivo encaminhamento:</b> ${g.motivo_encaminhamento}<br>
+        <b>Exames:</b> ${exames}
+      `;
+      document.getElementById('novo-status').value = g.status;
+      document.getElementById('modal-analise').classList.add('open');
+    }
+
+    async function salvarStatus() {
+      const novoStatus = document.getElementById('novo-status').value;
+      try {
+        await apiFetch(`/guias/${guiaSelecionadaId}/status`, {
+          method: 'PUT',
+          body: JSON.stringify({ status: novoStatus }),
+        });
+        fecharModal();
+        mostrarSucesso('sucesso', 'Status atualizado com sucesso!');
+        await carregarGuias();
+      } catch (err) {
+        mostrarErro('erro', 'Erro ao atualizar status: ' + err.message);
+      }
+    }
+
+    function fecharModal() {
+      document.getElementById('modal-analise').classList.remove('open');
+      guiaSelecionadaId = null;
+    }
+
+    document.getElementById('filtro-status').addEventListener('change', renderTabela);
+    document.getElementById('modal-analise').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) fecharModal();
+    });
+
+    apiFetch(`/unidades/${usuario.id}`).then(data => {
+      if (data?.[0]) document.getElementById('nome-usuario').textContent = data[0].nome;
+    }).catch(() => {});
+
+    carregarGuias();
+  </script>
+</body>
+</html>

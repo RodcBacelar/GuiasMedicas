@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard – Médico</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <span class="navbar-brand">🏥 Guias Médicas</span>
+    <span>
+      <span class="navbar-user" id="nome-usuario"></span>
+      <button class="btn-logout" onclick="logout()">Sair</button>
+    </span>
+  </nav>
+
+  <div class="container-lg">
+    <div class="page-header">
+      <h2>Minhas Guias Solicitadas</h2>
+      <a href="nova-guia.html" class="btn btn-success">+ Nova Guia</a>
+    </div>
+
+    <div id="erro" class="alert alert-error"></div>
+
+    <!-- Filtro de status -->
+    <div class="card" style="padding:14px 20px; margin-bottom:16px;">
+      <label style="margin-bottom:0; display:flex; align-items:center; gap:12px;">
+        Filtrar por status:
+        <select id="filtro-status" style="width:auto;">
+          <option value="">Todos</option>
+          <option value="pendente">Pendente</option>
+          <option value="em_analise">Em Análise</option>
+          <option value="aprovado">Aprovado</option>
+          <option value="negado">Negado</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="card">
+      <div id="loading" class="loading">Carregando guias...</div>
+      <div class="table-wrapper" id="tabela-wrapper" style="display:none;">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Paciente</th>
+              <th>Unidade</th>
+              <th>CID-10</th>
+              <th>Prioridade</th>
+              <th>Status</th>
+              <th>Data</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+        <p id="sem-guias" class="text-center text-muted mt-4" style="display:none;">Nenhuma guia encontrada.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de detalhes -->
+  <div class="modal-overlay" id="modal-detalhes">
+    <div class="modal" style="max-width:600px;">
+      <div class="modal-title">Detalhes da Guia</div>
+      <div id="detalhes-conteudo"></div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="fecharModal()">Fechar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script>
+    const usuario = exigirAuth('medico');
+    let todasGuias = [];
+
+    async function carregarGuias() {
+      try {
+        todasGuias = await apiFetch('/guias');
+        // Filtra só as guias deste médico
+        todasGuias = todasGuias.filter(g => g.id_medico === usuario.id);
+        renderTabela();
+      } catch (err) {
+        mostrarErro('erro', 'Erro ao carregar guias: ' + err.message);
+      } finally {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('tabela-wrapper').style.display = 'block';
+      }
+    }
+
+    function renderTabela() {
+      const filtro = document.getElementById('filtro-status').value;
+      const guias  = filtro ? todasGuias.filter(g => g.status === filtro) : todasGuias;
+      const tbody  = document.getElementById('tbody');
+      tbody.innerHTML = '';
+
+      if (guias.length === 0) {
+        document.getElementById('sem-guias').style.display = 'block';
+        return;
+      }
+      document.getElementById('sem-guias').style.display = 'none';
+
+      guias.forEach(g => {
+        const { text, cls } = statusLabel(g.status);
+        const data = new Date(g.criado_em).toLocaleDateString('pt-BR');
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${g.id}</td>
+          <td>${g.nome_paciente || '—'}</td>
+          <td>${g.nome_unidade || '—'}</td>
+          <td><code>${g.cid_10}</code></td>
+          <td>${g.prioridade}</td>
+          <td><span class="badge ${cls}">${text}</span></td>
+          <td>${data}</td>
+          <td>
+            <button class="btn btn-secondary btn-sm" onclick="abrirDetalhes(${g.id})">Ver</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function abrirDetalhes(id) {
+      const g = todasGuias.find(x => x.id === id);
+      if (!g) return;
+      const { text, cls } = statusLabel(g.status);
+      const exames = g.exames?.map(e => e.nome).join(', ') || '—';
+      document.getElementById('detalhes-conteudo').innerHTML = `
+        <table style="width:100%; font-size:.9rem;">
+          <tr><td style="padding:6px; color:var(--cinza); width:45%;"><b>Paciente</b></td><td>${g.nome_paciente}</td></tr>
+          <tr><td style="padding:6px; color:var(--cinza);"><b>Unidade</b></td><td>${g.nome_unidade}</td></tr>
+          <tr><td style="padding:6px; color:var(--cinza);"><b>Status</b></td><td><span class="badge ${cls}">${text}</span></td></tr>
+          <tr><td style="padding:6px; color:var(--cinza);"><b>CID-10</b></td><td>${g.cid_10}</td></tr>
+          <tr><td style="padding:6px; color:var(--cinza);"><b>Prioridade</b></td><td>${g.prioridade}</td></tr>
+          <tr><td style="padding:6px; color:var(--cinza);"><b>Nº Consultas</b></td><td>${g.numero_consultas}</td></tr>
+          <tr><td style="padding:6px; color:var(--cinza);"><b>Tempo de doença</b></td><td>${g.tempo_doenca}</td></tr>
+          <tr><td style="padding:6px; color:var(--cinza);"><b>Quadro clínico</b></td><td>${g.quadro_clinico}</td></tr>
+          <tr><td style="padding:6px; color:var(--cinza);"><b>Hipótese diagnóstica</b></td><td>${g.hipotese_diagnostico}</td></tr>
+          <tr><td style="padding:6px; color:var(--cinza);"><b>Medicação</b></td><td>${g.medicacao}</td></tr>
+          <tr><td style="padding:6px; color:var(--cinza);"><b>Tratamento/Evolução</b></td><td>${g.tratamento_evolucao}</td></tr>
+          <tr><td style="padding:6px; color:var(--cinza);"><b>Motivo encaminhamento</b></td><td>${g.motivo_encaminhamento}</td></tr>
+          <tr><td style="padding:6px; color:var(--cinza);"><b>Exames</b></td><td>${exames}</td></tr>
+        </table>
+      `;
+      document.getElementById('modal-detalhes').classList.add('open');
+    }
+
+    function fecharModal() {
+      document.getElementById('modal-detalhes').classList.remove('open');
+    }
+
+    // Init
+    document.getElementById('filtro-status').addEventListener('change', renderTabela);
+    document.getElementById('modal-detalhes').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) fecharModal();
+    });
+
+    // Exibe nome do usuário (busca perfil)
+    apiFetch(`/medicos/${usuario.id}`).then(data => {
+      if (data?.[0]) document.getElementById('nome-usuario').textContent = 'Dr(a). ' + data[0].nome;
+    }).catch(() => {});
+
+    carregarGuias();
+  </script>
+</body>
+</html>

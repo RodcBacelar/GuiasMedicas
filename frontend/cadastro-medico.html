@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cadastro de Médico – Guias Médicas</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="auth-wrapper" style="align-items:flex-start; padding: 40px 16px;">
+    <div class="auth-box" style="max-width:560px;">
+      <div class="auth-logo">
+        <h1>🏥 Guias Médicas</h1>
+        <p>Cadastro de Médico</p>
+      </div>
+
+      <div id="erro"    class="alert alert-error"></div>
+      <div id="sucesso" class="alert alert-success"></div>
+
+      <form id="form-cadastro">
+        <p class="text-muted mb-4">Dados de acesso</p>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Nome completo *</label>
+            <input type="text" id="nome" required>
+          </div>
+          <div class="form-group">
+            <label>Telefone</label>
+            <input type="tel" id="telefone" placeholder="(11) 99999-9999">
+          </div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>E-mail *</label>
+            <input type="email" id="email" required>
+          </div>
+          <div class="form-group">
+            <label>Senha *</label>
+            <input type="password" id="senha" required minlength="6">
+          </div>
+        </div>
+
+        <hr>
+        <p class="text-muted mb-4">Dados profissionais</p>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Data de nascimento *</label>
+            <input type="date" id="nascimento" required>
+          </div>
+          <div class="form-group">
+            <label>Sexo *</label>
+            <select id="sexo" required>
+              <option value="">Selecione</option>
+              <option value="masculino">Masculino</option>
+              <option value="feminino">Feminino</option>
+              <option value="outro">Outro</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Especialidade *</label>
+          <input type="text" id="especialidade" placeholder="Ex: Cardiologia" required>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label>Cargo *</label>
+            <input type="text" id="cargo" placeholder="Ex: Clínico Geral" required>
+          </div>
+          <div class="form-group">
+            <label>Residência *</label>
+            <input type="text" id="residencia" placeholder="Cidade, Estado" required>
+          </div>
+        </div>
+
+        <div class="form-group mt-4">
+          <button type="submit" class="btn btn-primary" id="btn">Cadastrar</button>
+        </div>
+        <p class="text-center text-muted mt-2">
+          Já tem conta? <a href="index.html">Fazer login</a>
+        </p>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script>
+    document.getElementById('form-cadastro').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('btn');
+      btn.disabled = true;
+      btn.textContent = 'Cadastrando...';
+
+      try {
+        await apiFetch('/medicos', {
+          method: 'POST',
+          body: JSON.stringify({
+            nome:         document.getElementById('nome').value,
+            telefone:     document.getElementById('telefone').value || null,
+            email:        document.getElementById('email').value,
+            senha:        document.getElementById('senha').value,
+            tipo:         'medico',
+            nascimento:   document.getElementById('nascimento').value,
+            sexo:         document.getElementById('sexo').value,
+            especialidade:document.getElementById('especialidade').value,
+            cargo:        document.getElementById('cargo').value,
+            residencia:   document.getElementById('residencia').value,
+          }),
+        });
+        mostrarSucesso('sucesso', 'Médico cadastrado com sucesso! Redirecionando para o login...');
+        setTimeout(() => window.location.href = 'index.html', 2000);
+      } catch (err) {
+        mostrarErro('erro', err.message);
+        btn.disabled = false;
+        btn.textContent = 'Cadastrar';
+      }
+    });
+  </script>
+</body>
+</html>
