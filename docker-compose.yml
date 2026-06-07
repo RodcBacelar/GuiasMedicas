@@ -1,0 +1,15 @@
+services:
+  banco_dados:
+    image: postgres:18
+    restart: always
+    environment:
+      POSTGRES_USER: userDB
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: guias_medicas
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql
+
+volumes:
+  pgdata:
