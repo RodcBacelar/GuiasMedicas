@@ -6,9 +6,17 @@ dotenv.config();
 
 const app = express();
 const usuariosRoutes = require('./routes/usuarios');
+const medicosRoutes = require('./routes/medicos');
+const pacientesRoutes = require('./routes/pacientes');
+const unidadesRoutes = require('./routes/unidades');
+const examesRoutes = require('./routes/exames');
 
 app.use(express.json());
 app.use('/usuarios', usuariosRoutes);
+app.use('/medicos', medicosRoutes);
+app.use('/pacientes', pacientesRoutes);
+app.use('/unidades', unidadesRoutes);
+app.use('/exames', examesRoutes);
 
 app.get('/', (req, res) => {
   res.json({ mensagem: 'API funcionando!' });
