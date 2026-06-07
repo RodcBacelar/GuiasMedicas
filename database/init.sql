@@ -9,7 +9,8 @@ CREATE TABLE usuario
   telefone VARCHAR(20),
   email VARCHAR(255) NOT NULL UNIQUE,
   senha VARCHAR(255) NOT NULL,
-  tipo tipo_usuario NOT NULL
+  tipo tipo_usuario NOT NULL,
+  ativo BOOLEAN NOT NULL DEFAULT true
 );
 
 CREATE TABLE paciente 
