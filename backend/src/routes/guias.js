@@ -75,7 +75,7 @@ router.post('/', autenticar, autorizar('medico'), validar(criarGuiaSchema), asyn
 });
 
 // Status Guia
-router.put('/:id/status', autenticar, autorizar('unidade'), validar(atualizarGuiaSchema), async (req, res) => {
+router.put('/:id/status', autenticar, autorizar('unidade'), validar(statusGuiaSchema), async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
@@ -90,7 +90,7 @@ router.put('/:id/status', autenticar, autorizar('unidade'), validar(atualizarGui
 });
 
 // Atualizar Guia
-router.put('/:id', autenticar, autorizar('medico'), validar(statusGuiaSchema), async (req, res) => {
+router.put('/:id', autenticar, autorizar('medico'), validar(atualizarGuiaSchema), async (req, res) => {
   try {
     const { id } = req.params;
     const { prioridade, exames, numero_consultas, tempo_doenca, quadro_clinico, hipotese_diagnostico, cid_10, medicacao, tratamento_evolucao, motivo_encaminhamento } = req.body;
