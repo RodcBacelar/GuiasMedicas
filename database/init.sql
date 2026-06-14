@@ -73,3 +73,21 @@ CREATE TABLE guia_exame
   id_exame INT NOT NULL REFERENCES exame(id),
   PRIMARY KEY (id_guia, id_exame)
 );
+
+INSERT INTO exame (nome, descricao) VALUES
+  ('Hemograma completo',         'Avaliação quantitativa e qualitativa das células sanguíneas'),
+  ('Glicemia em jejum',          'Dosagem de glicose no sangue após período de jejum'),
+  ('Colesterol total e frações', 'Avaliação do perfil lipídico: LDL, HDL e triglicerídeos'),
+  ('Creatinina sérica',          'Avaliação da função renal'),
+  ('Ureia',                      'Avaliação complementar da função renal'),
+  ('TGO / TGP',                  'Avaliação da função hepática (transaminases)'),
+  ('TSH',                        'Avaliação da função da tireoide'),
+  ('HbA1c',                      'Hemoglobina glicada – controle glicêmico de longo prazo'),
+  ('Urina tipo I',                'Análise físico-química e microscópica da urina'),
+  ('PSA total',                   'Antígeno prostático específico'),
+  ('Raio-X de tórax',            'Imagem radiológica do tórax em PA e perfil'),
+  ('Eletrocardiograma',          'Avaliação da atividade elétrica do coração'),
+  ('Ecocardiograma',             'Ultrassonografia do coração'),
+  ('Ecografia abdominal',        'Ultrassonografia dos órgãos abdominais'),
+  ('Tomografia de tórax',        'Imagem tomográfica computadorizada do tórax'),
+  ('Ressonância magnética',      'Imagem por ressonância magnética nuclear');

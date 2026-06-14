@@ -10,8 +10,9 @@
   <div class="auth-wrapper">
     <div class="auth-box">
       <div class="auth-logo">
-        <h1>🏥 Guias Médicas</h1>
-        <p>Sistema de Solicitação e Autorização</p>
+        <h1>Guias Médicas</h1>
+        <p>Central de Autorização em Saúde</p>
+        <span class="auth-online">Sistema Online</span>
       </div>
 
       <div id="erro" class="alert alert-error"></div>
@@ -33,9 +34,9 @@
       <hr>
       <p class="text-center text-muted">Ainda não tem conta?</p>
       <div class="flex mt-2 gap-2" style="flex-wrap:wrap; justify-content:center;">
-        <a href="cadastro-medico.html" class="btn btn-secondary btn-sm">Cadastrar como Médico</a>
-        <a href="cadastro-paciente.html" class="btn btn-secondary btn-sm">Cadastrar como Paciente</a>
-        <a href="cadastro-unidade.html" class="btn btn-secondary btn-sm">Cadastrar Unidade</a>
+        <a href="cadastro-medico.html" class="btn btn-secondary btn-sm">Médico</a>
+        <a href="cadastro-paciente.html" class="btn btn-secondary btn-sm">Paciente</a>
+        <a href="cadastro-unidade.html" class="btn btn-secondary btn-sm">Unidade</a>
       </div>
     </div>
   </div>
@@ -44,7 +45,6 @@
   <script src="js/auth.js"></script>
   <script src="js/api.js"></script>
   <script>
-    // Se já estiver logado, redireciona direto
     const usuarioLogado = getUsuario();
     if (usuarioLogado) redirecionarPorTipo(usuarioLogado.tipo);
 
@@ -52,7 +52,7 @@
       e.preventDefault();
       const btn = document.getElementById('btn-login');
       btn.disabled = true;
-      btn.textContent = 'Entrando...';
+      btn.textContent = 'Autenticando...';
 
       try {
         const data = await apiFetch('/autenticacao', {

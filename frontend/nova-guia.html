@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Nova Guia – Médico</title>
+  <title>Nova Guia – Guias Médicas</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <nav class="navbar">
-    <span class="navbar-brand">🏥 Guias Médicas</span>
-    <span>
+    <span class="navbar-brand">Guias Médicas</span>
+    <span style="display:flex; align-items:center;">
       <a href="dashboard-medico.html" class="btn-logout" style="text-decoration:none;">← Voltar</a>
       <button class="btn-logout" onclick="logout()">Sair</button>
     </span>
@@ -17,7 +17,7 @@
 
   <div class="container">
     <div class="page-header">
-      <h2>Solicitar Nova Guia Médica</h2>
+      <h2>Nova Solicitação de Guia</h2>
     </div>
 
     <div id="erro"    class="alert alert-error"></div>
@@ -25,9 +25,8 @@
 
     <form id="form-guia">
 
-      <!-- Paciente e Unidade -->
       <div class="card">
-        <div class="card-title">Dados do Encaminhamento</div>
+        <div class="card-title">Encaminhamento</div>
         <div class="form-grid-2">
           <div class="form-group">
             <label>Paciente *</label>
@@ -36,7 +35,7 @@
             </select>
           </div>
           <div class="form-group">
-            <label>Unidade / Plano de Saúde *</label>
+            <label>Unidade *</label>
             <select id="id_unidade" required>
               <option value="">Carregando...</option>
             </select>
@@ -44,7 +43,7 @@
         </div>
         <div class="form-grid-2">
           <div class="form-group">
-            <label>Prioridade (1–5) *</label>
+            <label>Prioridade *</label>
             <select id="prioridade" required>
               <option value="1">1 – Urgente</option>
               <option value="2">2 – Alta</option>
@@ -64,7 +63,6 @@
         </div>
       </div>
 
-      <!-- Dados clínicos -->
       <div class="card">
         <div class="card-title">Dados Clínicos</div>
         <div class="form-group">
@@ -93,14 +91,13 @@
         </div>
       </div>
 
-      <!-- Exames -->
       <div class="card">
         <div class="card-title">Exames Solicitados *</div>
         <p class="text-muted mb-4">Selecione ao menos um exame.</p>
         <div id="exames-grid" class="exames-grid">
           <div class="loading">Carregando exames...</div>
         </div>
-        <p id="erro-exames" style="color:var(--vermelho); font-size:.85rem; margin-top:8px; display:none;">
+        <p id="erro-exames" style="color:var(--vermelho); font-size:.82rem; margin-top:8px; display:none;">
           Selecione ao menos um exame.
         </p>
       </div>
@@ -120,7 +117,6 @@
   <script>
     const usuario = exigirAuth('medico');
 
-    // Carrega pacientes, unidades e exames em paralelo
     async function carregarDados() {
       try {
         const [pacientes, unidades, exames] = await Promise.all([
@@ -129,17 +125,14 @@
           apiFetch('/exames'),
         ]);
 
-        // Pacientes
         const selPaciente = document.getElementById('id_paciente');
         selPaciente.innerHTML = '<option value="">Selecione o paciente</option>' +
           pacientes.map(p => `<option value="${p.id_usuario}">${p.nome}</option>`).join('');
 
-        // Unidades
         const selUnidade = document.getElementById('id_unidade');
         selUnidade.innerHTML = '<option value="">Selecione a unidade</option>' +
           unidades.map(u => `<option value="${u.id_usuario}">${u.nome}</option>`).join('');
 
-        // Exames – checkboxes
         const grid = document.getElementById('exames-grid');
         if (exames.length === 0) {
           grid.innerHTML = '<p class="text-muted">Nenhum exame cadastrado.</p>';
@@ -159,7 +152,6 @@
     document.getElementById('form-guia').addEventListener('submit', async (e) => {
       e.preventDefault();
 
-      // Valida exames
       const exameSelecionados = [...document.querySelectorAll('input[name=exame]:checked')].map(el => Number(el.value));
       if (exameSelecionados.length === 0) {
         document.getElementById('erro-exames').style.display = 'block';

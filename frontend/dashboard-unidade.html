@@ -3,53 +3,52 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard – Unidade</title>
+  <title>Unidade – Guias Médicas</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <nav class="navbar">
-    <span class="navbar-brand">🏥 Guias Médicas</span>
-    <span>
+    <span class="navbar-brand">Guias Médicas</span>
+    <span style="display:flex; align-items:center;">
       <span class="navbar-user" id="nome-usuario"></span>
+      <button class="btn-logout" onclick="carregarGuias()" style="margin-right:4px;">↻</button>
       <button class="btn-logout" onclick="logout()">Sair</button>
     </span>
   </nav>
 
   <div class="container-lg">
     <div class="page-header">
-      <h2>Painel de Análise de Guias</h2>
-      <button class="btn btn-secondary btn-sm" onclick="carregarGuias()">↻ Atualizar</button>
+      <h2>Painel de Análise</h2>
     </div>
 
-    <!-- Resumo por status -->
-    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px;" id="cards-resumo">
-      <div class="card" style="padding:16px; text-align:center; margin-bottom:0;">
-        <div style="font-size:1.6rem; font-weight:800; color:var(--amarelo);" id="cnt-pendente">—</div>
-        <div class="text-muted">Pendentes</div>
+    <!-- Stat cards -->
+    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:24px;">
+      <div style="background:var(--branco); border-radius:var(--radius); box-shadow:var(--sombra); padding:20px; border-top:3px solid var(--amarelo); text-align:center;">
+        <div style="font-size:2rem; font-weight:800; color:var(--amarelo); line-height:1;" id="cnt-pendente">—</div>
+        <div style="font-size:.7rem; font-weight:700; color:var(--cinza); text-transform:uppercase; letter-spacing:.6px; margin-top:6px;">Pendentes</div>
       </div>
-      <div class="card" style="padding:16px; text-align:center; margin-bottom:0;">
-        <div style="font-size:1.6rem; font-weight:800; color:#1e40af;" id="cnt-analise">—</div>
-        <div class="text-muted">Em Análise</div>
+      <div style="background:var(--branco); border-radius:var(--radius); box-shadow:var(--sombra); padding:20px; border-top:3px solid var(--turquesa); text-align:center;">
+        <div style="font-size:2rem; font-weight:800; color:var(--turquesa); line-height:1;" id="cnt-analise">—</div>
+        <div style="font-size:.7rem; font-weight:700; color:var(--cinza); text-transform:uppercase; letter-spacing:.6px; margin-top:6px;">Em Análise</div>
       </div>
-      <div class="card" style="padding:16px; text-align:center; margin-bottom:0;">
-        <div style="font-size:1.6rem; font-weight:800; color:var(--verde);" id="cnt-aprovado">—</div>
-        <div class="text-muted">Aprovadas</div>
+      <div style="background:var(--branco); border-radius:var(--radius); box-shadow:var(--sombra); padding:20px; border-top:3px solid var(--esmeralda); text-align:center;">
+        <div style="font-size:2rem; font-weight:800; color:var(--esmeralda); line-height:1;" id="cnt-aprovado">—</div>
+        <div style="font-size:.7rem; font-weight:700; color:var(--cinza); text-transform:uppercase; letter-spacing:.6px; margin-top:6px;">Aprovadas</div>
       </div>
-      <div class="card" style="padding:16px; text-align:center; margin-bottom:0;">
-        <div style="font-size:1.6rem; font-weight:800; color:var(--vermelho);" id="cnt-negado">—</div>
-        <div class="text-muted">Negadas</div>
+      <div style="background:var(--branco); border-radius:var(--radius); box-shadow:var(--sombra); padding:20px; border-top:3px solid var(--vermelho); text-align:center;">
+        <div style="font-size:2rem; font-weight:800; color:var(--vermelho); line-height:1;" id="cnt-negado">—</div>
+        <div style="font-size:.7rem; font-weight:700; color:var(--cinza); text-transform:uppercase; letter-spacing:.6px; margin-top:6px;">Negadas</div>
       </div>
     </div>
 
-    <div id="erro" class="alert alert-error"></div>
+    <div id="erro"   class="alert alert-error"></div>
     <div id="sucesso" class="alert alert-success"></div>
 
-    <!-- Filtro -->
-    <div class="card" style="padding:14px 20px; margin-bottom:16px;">
-      <label style="margin-bottom:0; display:flex; align-items:center; gap:12px;">
-        Filtrar por status:
+    <div class="card" style="padding:12px 20px; margin-bottom:16px; border-left-color:var(--cinza);">
+      <label style="margin-bottom:0; display:flex; align-items:center; gap:12px; text-transform:none; font-size:.88rem; font-weight:500;">
+        <span style="color:var(--cinza); text-transform:uppercase; font-size:.72rem; letter-spacing:.5px; font-weight:700;">Filtrar</span>
         <select id="filtro-status" style="width:auto;">
-          <option value="">Todos</option>
+          <option value="">Todos os status</option>
           <option value="pendente">Pendente</option>
           <option value="em_analise">Em Análise</option>
           <option value="aprovado">Aprovado</option>
@@ -58,9 +57,9 @@
       </label>
     </div>
 
-    <div class="card">
+    <div class="card" style="padding:0; overflow:hidden;">
       <div id="loading" class="loading">Carregando guias...</div>
-      <div class="table-wrapper" id="tabela-wrapper" style="display:none;">
+      <div class="table-wrapper" id="tabela-wrapper" style="display:none; border:none;">
         <table>
           <thead>
             <tr>
@@ -76,7 +75,7 @@
           </thead>
           <tbody id="tbody"></tbody>
         </table>
-        <p id="sem-guias" class="text-center text-muted mt-4" style="display:none;">Nenhuma guia encontrada.</p>
+        <p id="sem-guias" class="text-center text-muted" style="display:none; padding:24px;">Nenhuma guia encontrada.</p>
       </div>
     </div>
   </div>
@@ -85,10 +84,10 @@
   <div class="modal-overlay" id="modal-analise">
     <div class="modal" style="max-width:620px;">
       <div class="modal-title" id="modal-titulo">Analisar Guia</div>
-      <div id="modal-info" style="margin-bottom:18px; font-size:.9rem; line-height:1.7;"></div>
+      <div id="modal-info" style="margin-bottom:18px; font-size:.88rem; line-height:1.8; color:var(--slate);"></div>
       <hr>
       <div class="form-group">
-        <label>Alterar status para:</label>
+        <label>Alterar status</label>
         <select id="novo-status">
           <option value="pendente">Pendente</option>
           <option value="em_analise">Em Análise</option>
@@ -98,7 +97,7 @@
       </div>
       <div class="modal-actions">
         <button class="btn btn-secondary" onclick="fecharModal()">Cancelar</button>
-        <button class="btn btn-primary" style="width:auto;" onclick="salvarStatus()">Salvar</button>
+        <button class="btn btn-success" style="width:auto;" onclick="salvarStatus()">Confirmar</button>
       </div>
     </div>
   </div>
@@ -115,7 +114,6 @@
       document.getElementById('loading').style.display = 'block';
       document.getElementById('tabela-wrapper').style.display = 'none';
       try {
-        // Filtra só as guias desta unidade
         const todas = await apiFetch('/guias');
         todasGuias = todas.filter(g => g.id_unidade === usuario.id);
         atualizarResumo();
@@ -129,12 +127,12 @@
     }
 
     function atualizarResumo() {
-      const contagem = { pendente: 0, em_analise: 0, aprovado: 0, negado: 0 };
-      todasGuias.forEach(g => { if (contagem[g.status] !== undefined) contagem[g.status]++; });
-      document.getElementById('cnt-pendente').textContent = contagem.pendente;
-      document.getElementById('cnt-analise').textContent  = contagem.em_analise;
-      document.getElementById('cnt-aprovado').textContent = contagem.aprovado;
-      document.getElementById('cnt-negado').textContent   = contagem.negado;
+      const c = { pendente: 0, em_analise: 0, aprovado: 0, negado: 0 };
+      todasGuias.forEach(g => { if (c[g.status] !== undefined) c[g.status]++; });
+      document.getElementById('cnt-pendente').textContent = c.pendente;
+      document.getElementById('cnt-analise').textContent  = c.em_analise;
+      document.getElementById('cnt-aprovado').textContent = c.aprovado;
+      document.getElementById('cnt-negado').textContent   = c.negado;
     }
 
     function renderTabela() {
@@ -152,17 +150,17 @@
       guias.forEach(g => {
         const { text, cls } = statusLabel(g.status);
         const data = new Date(g.criado_em).toLocaleDateString('pt-BR');
-        const podeAtualizar = g.status !== 'aprovado' && g.status !== 'negado';
+        const prioLabel = ['', 'Urgente', 'Alta', 'Normal', 'Baixa', 'Eletivo'][g.prioridade] || g.prioridade;
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td>${g.id}</td>
+          <td style="color:var(--cinza); font-size:.8rem;">#${g.id}</td>
           <td>${g.nome_medico || '—'}</td>
           <td>${g.nome_paciente || '—'}</td>
           <td><code>${g.cid_10}</code></td>
-          <td>${g.prioridade}</td>
+          <td>${prioLabel}</td>
           <td><span class="badge ${cls}">${text}</span></td>
-          <td>${data}</td>
-          <td style="display:flex; gap:6px;">
+          <td style="color:var(--cinza);">${data}</td>
+          <td>
             <button class="btn btn-secondary btn-sm" onclick="abrirAnalise(${g.id})">Analisar</button>
           </td>
         `;
@@ -175,10 +173,10 @@
       if (!g) return;
       guiaSelecionadaId = id;
       const exames = g.exames?.map(e => e.nome).join(', ') || '—';
-      document.getElementById('modal-titulo').textContent = `Guia #${g.id} – ${g.nome_paciente}`;
+      document.getElementById('modal-titulo').textContent = `Guia #${g.id} — ${g.nome_paciente}`;
       document.getElementById('modal-info').innerHTML = `
         <b>Médico:</b> ${g.nome_medico}<br>
-        <b>CID-10:</b> ${g.cid_10}<br>
+        <b>CID-10:</b> <code>${g.cid_10}</code><br>
         <b>Prioridade:</b> ${g.prioridade}<br>
         <b>Quadro clínico:</b> ${g.quadro_clinico}<br>
         <b>Hipótese diagnóstica:</b> ${g.hipotese_diagnostico}<br>

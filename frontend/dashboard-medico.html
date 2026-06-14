@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard – Médico</title>
+  <title>Médico – Guias Médicas</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <nav class="navbar">
-    <span class="navbar-brand">🏥 Guias Médicas</span>
-    <span>
+    <span class="navbar-brand">Guias Médicas</span>
+    <span style="display:flex; align-items:center;">
       <span class="navbar-user" id="nome-usuario"></span>
       <button class="btn-logout" onclick="logout()">Sair</button>
     </span>
@@ -17,18 +17,17 @@
 
   <div class="container-lg">
     <div class="page-header">
-      <h2>Minhas Guias Solicitadas</h2>
+      <h2>Guias Solicitadas</h2>
       <a href="nova-guia.html" class="btn btn-success">+ Nova Guia</a>
     </div>
 
     <div id="erro" class="alert alert-error"></div>
 
-    <!-- Filtro de status -->
-    <div class="card" style="padding:14px 20px; margin-bottom:16px;">
-      <label style="margin-bottom:0; display:flex; align-items:center; gap:12px;">
-        Filtrar por status:
+    <div class="card" style="padding:12px 20px; margin-bottom:16px; border-left-color: var(--cinza);">
+      <label style="margin-bottom:0; display:flex; align-items:center; gap:12px; text-transform:none; font-size:.88rem; font-weight:500;">
+        <span style="color:var(--cinza); text-transform:uppercase; font-size:.72rem; letter-spacing:.5px; font-weight:700;">Filtrar</span>
         <select id="filtro-status" style="width:auto;">
-          <option value="">Todos</option>
+          <option value="">Todos os status</option>
           <option value="pendente">Pendente</option>
           <option value="em_analise">Em Análise</option>
           <option value="aprovado">Aprovado</option>
@@ -37,9 +36,9 @@
       </label>
     </div>
 
-    <div class="card">
+    <div class="card" style="padding:0; overflow:hidden;">
       <div id="loading" class="loading">Carregando guias...</div>
-      <div class="table-wrapper" id="tabela-wrapper" style="display:none;">
+      <div class="table-wrapper" id="tabela-wrapper" style="display:none; border:none;">
         <table>
           <thead>
             <tr>
@@ -55,7 +54,7 @@
           </thead>
           <tbody id="tbody"></tbody>
         </table>
-        <p id="sem-guias" class="text-center text-muted mt-4" style="display:none;">Nenhuma guia encontrada.</p>
+        <p id="sem-guias" class="text-center text-muted mt-4" style="display:none; padding:24px;">Nenhuma guia encontrada.</p>
       </div>
     </div>
   </div>
@@ -63,7 +62,7 @@
   <!-- Modal de detalhes -->
   <div class="modal-overlay" id="modal-detalhes">
     <div class="modal" style="max-width:600px;">
-      <div class="modal-title">Detalhes da Guia</div>
+      <div class="modal-title" id="modal-titulo-detalhes">Detalhes da Guia</div>
       <div id="detalhes-conteudo"></div>
       <div class="modal-actions">
         <button class="btn btn-secondary" onclick="fecharModal()">Fechar</button>
@@ -81,7 +80,6 @@
     async function carregarGuias() {
       try {
         todasGuias = await apiFetch('/guias');
-        // Filtra só as guias deste médico
         todasGuias = todasGuias.filter(g => g.id_medico === usuario.id);
         renderTabela();
       } catch (err) {
@@ -107,17 +105,18 @@
       guias.forEach(g => {
         const { text, cls } = statusLabel(g.status);
         const data = new Date(g.criado_em).toLocaleDateString('pt-BR');
+        const prioLabel = ['', 'Urgente', 'Alta', 'Normal', 'Baixa', 'Eletivo'][g.prioridade] || g.prioridade;
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td>${g.id}</td>
+          <td style="color:var(--cinza); font-size:.8rem;">#${g.id}</td>
           <td>${g.nome_paciente || '—'}</td>
           <td>${g.nome_unidade || '—'}</td>
           <td><code>${g.cid_10}</code></td>
-          <td>${g.prioridade}</td>
+          <td>${prioLabel}</td>
           <td><span class="badge ${cls}">${text}</span></td>
-          <td>${data}</td>
+          <td style="color:var(--cinza);">${data}</td>
           <td>
-            <button class="btn btn-secondary btn-sm" onclick="abrirDetalhes(${g.id})">Ver</button>
+            <button class="btn btn-secondary btn-sm" onclick="abrirDetalhes(${g.id})">Detalhar</button>
           </td>
         `;
         tbody.appendChild(tr);
@@ -129,21 +128,22 @@
       if (!g) return;
       const { text, cls } = statusLabel(g.status);
       const exames = g.exames?.map(e => e.nome).join(', ') || '—';
+      document.getElementById('modal-titulo-detalhes').textContent = `Guia #${g.id} — ${g.nome_paciente}`;
       document.getElementById('detalhes-conteudo').innerHTML = `
-        <table style="width:100%; font-size:.9rem;">
-          <tr><td style="padding:6px; color:var(--cinza); width:45%;"><b>Paciente</b></td><td>${g.nome_paciente}</td></tr>
-          <tr><td style="padding:6px; color:var(--cinza);"><b>Unidade</b></td><td>${g.nome_unidade}</td></tr>
-          <tr><td style="padding:6px; color:var(--cinza);"><b>Status</b></td><td><span class="badge ${cls}">${text}</span></td></tr>
-          <tr><td style="padding:6px; color:var(--cinza);"><b>CID-10</b></td><td>${g.cid_10}</td></tr>
-          <tr><td style="padding:6px; color:var(--cinza);"><b>Prioridade</b></td><td>${g.prioridade}</td></tr>
-          <tr><td style="padding:6px; color:var(--cinza);"><b>Nº Consultas</b></td><td>${g.numero_consultas}</td></tr>
-          <tr><td style="padding:6px; color:var(--cinza);"><b>Tempo de doença</b></td><td>${g.tempo_doenca}</td></tr>
-          <tr><td style="padding:6px; color:var(--cinza);"><b>Quadro clínico</b></td><td>${g.quadro_clinico}</td></tr>
-          <tr><td style="padding:6px; color:var(--cinza);"><b>Hipótese diagnóstica</b></td><td>${g.hipotese_diagnostico}</td></tr>
-          <tr><td style="padding:6px; color:var(--cinza);"><b>Medicação</b></td><td>${g.medicacao}</td></tr>
-          <tr><td style="padding:6px; color:var(--cinza);"><b>Tratamento/Evolução</b></td><td>${g.tratamento_evolucao}</td></tr>
-          <tr><td style="padding:6px; color:var(--cinza);"><b>Motivo encaminhamento</b></td><td>${g.motivo_encaminhamento}</td></tr>
-          <tr><td style="padding:6px; color:var(--cinza);"><b>Exames</b></td><td>${exames}</td></tr>
+        <table style="width:100%; font-size:.88rem;">
+          <tr><td style="padding:7px 4px; color:var(--cinza); width:42%; font-size:.72rem; text-transform:uppercase; letter-spacing:.5px; font-weight:700;">Paciente</td><td>${g.nome_paciente}</td></tr>
+          <tr><td style="padding:7px 4px; color:var(--cinza); font-size:.72rem; text-transform:uppercase; letter-spacing:.5px; font-weight:700;">Unidade</td><td>${g.nome_unidade}</td></tr>
+          <tr><td style="padding:7px 4px; color:var(--cinza); font-size:.72rem; text-transform:uppercase; letter-spacing:.5px; font-weight:700;">Status</td><td><span class="badge ${cls}">${text}</span></td></tr>
+          <tr><td style="padding:7px 4px; color:var(--cinza); font-size:.72rem; text-transform:uppercase; letter-spacing:.5px; font-weight:700;">CID-10</td><td><code>${g.cid_10}</code></td></tr>
+          <tr><td style="padding:7px 4px; color:var(--cinza); font-size:.72rem; text-transform:uppercase; letter-spacing:.5px; font-weight:700;">Prioridade</td><td>${g.prioridade}</td></tr>
+          <tr><td style="padding:7px 4px; color:var(--cinza); font-size:.72rem; text-transform:uppercase; letter-spacing:.5px; font-weight:700;">Nº Consultas</td><td>${g.numero_consultas}</td></tr>
+          <tr><td style="padding:7px 4px; color:var(--cinza); font-size:.72rem; text-transform:uppercase; letter-spacing:.5px; font-weight:700;">Tempo de doença</td><td>${g.tempo_doenca}</td></tr>
+          <tr><td style="padding:7px 4px; color:var(--cinza); font-size:.72rem; text-transform:uppercase; letter-spacing:.5px; font-weight:700;">Quadro clínico</td><td>${g.quadro_clinico}</td></tr>
+          <tr><td style="padding:7px 4px; color:var(--cinza); font-size:.72rem; text-transform:uppercase; letter-spacing:.5px; font-weight:700;">Hipótese diagnóstica</td><td>${g.hipotese_diagnostico}</td></tr>
+          <tr><td style="padding:7px 4px; color:var(--cinza); font-size:.72rem; text-transform:uppercase; letter-spacing:.5px; font-weight:700;">Medicação</td><td>${g.medicacao}</td></tr>
+          <tr><td style="padding:7px 4px; color:var(--cinza); font-size:.72rem; text-transform:uppercase; letter-spacing:.5px; font-weight:700;">Tratamento/Evolução</td><td>${g.tratamento_evolucao}</td></tr>
+          <tr><td style="padding:7px 4px; color:var(--cinza); font-size:.72rem; text-transform:uppercase; letter-spacing:.5px; font-weight:700;">Motivo encaminhamento</td><td>${g.motivo_encaminhamento}</td></tr>
+          <tr><td style="padding:7px 4px; color:var(--cinza); font-size:.72rem; text-transform:uppercase; letter-spacing:.5px; font-weight:700;">Exames</td><td>${exames}</td></tr>
         </table>
       `;
       document.getElementById('modal-detalhes').classList.add('open');
@@ -153,13 +153,11 @@
       document.getElementById('modal-detalhes').classList.remove('open');
     }
 
-    // Init
     document.getElementById('filtro-status').addEventListener('change', renderTabela);
     document.getElementById('modal-detalhes').addEventListener('click', (e) => {
       if (e.target === e.currentTarget) fecharModal();
     });
 
-    // Exibe nome do usuário (busca perfil)
     apiFetch(`/medicos/${usuario.id}`).then(data => {
       if (data?.[0]) document.getElementById('nome-usuario').textContent = 'Dr(a). ' + data[0].nome;
     }).catch(() => {});
